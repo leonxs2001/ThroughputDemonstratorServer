@@ -1,4 +1,5 @@
 import socket
+import time
 
 HOST = '127.0.0.1'
 PORT = 65432
@@ -26,14 +27,25 @@ def start_server():
 
             received_data_amount = 0
             print(f"Received Data 0%")
+            start_time = time.time()
             while received_data_amount < data_size:
                 chunk = conn.recv(buffer_size)
                 if not chunk:
+                    if received_data_amount == 0:
+                        start_time = time.time()
                     break
                 received_data_amount += buffer_size
                 percent = (received_data_amount / data_size) * 100
                 print(f"Received Data {percent:.2f}%")
-            print("Receiving ended")
+            end_time = time.time()
+            execution_time_seconds = end_time - start_time
+            execution_time_minutes = execution_time_seconds // 60
+            execution_time_seconds -= execution_time_minutes * 60
+            execution_time_hours = execution_time_minutes // 60
+            execution_time_minutes -= execution_time_hours * 60
+            execution_time_milliseconds = int((execution_time_seconds - int(execution_time_seconds)) * 1000)
+            execution_time_seconds = int(execution_time_seconds)
+            print(f"Receiving ended. Execution time is {execution_time_hours} hours, {execution_time_minutes} minutes, {execution_time_seconds} seconds and {execution_time_milliseconds} milliseconds.")
             s.close()
 
 
