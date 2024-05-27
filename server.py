@@ -1,14 +1,5 @@
 import socket
-import time
-from enum import Enum
-
-
-class DataUnit(Enum):
-    GB = 1024 ** 3
-    MB = 1024 ** 2
-    KB = 1024
-    B = 1
-
+from enums import DataUnit, SendingType
 
 HOST = '127.0.0.1'
 PORT = 65432
@@ -27,16 +18,21 @@ def start_server():
         conn, addr = s.accept()
         with conn:
             print('Connected with', addr)
-            conn.sendall(f"{BUFFER_SIZE};{DATA_SIZE}".encode())
 
-            response = conn.recv(1024).decode()
+            sending_type = SendingType.from_string(conn.recv(1024).decode())
+            if sending_type == SendingType.DUMMY:
+                conn.sendall(b"\x01")
+                buffer_size_data, data_size_data = conn.recv(1024).decode().split(";")
+                print((buffer_size_data, data_size_data))
+                buffer_size = int(buffer_size_data)
+                data_size = int(data_size_data)
+                numbers_of_iteration = data_size / buffer_size
+                for _ in range(int(numbers_of_iteration)):
+                    conn.sendall(b"A" * buffer_size)
 
-            if response == "ready":
-                print("Start sending data.")
-                dummy_data = b'A' * DATA_SIZE
-                conn.sendall(dummy_data)
-            else:
-                print("Can not start sending data.")
+                missing_data = b"A" * (data_size - buffer_size * int(numbers_of_iteration))
+                if missing_data:
+                    conn.sendall(missing_data)
 
 
 if __name__ == '__main__':

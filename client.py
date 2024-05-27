@@ -1,6 +1,8 @@
 import socket
 import time
 
+from enums import DataUnit, SendingType
+
 HOST = '127.0.0.1'
 PORT = 65432
 
@@ -16,74 +18,62 @@ def get_data_size():
     choice_unit = input(
         "Which unit for datasize do you prefer B (enter B), KB (enter KB), MB (enter MB) or GB (enter GB)?").upper()
 
-    if choice_unit == "B":
-        multiplier = 1
-    elif choice_unit == "KB":
-        multiplier = 1024
-    elif choice_unit == "MB":
-        multiplier = 1024 ** 2
-    elif choice_unit == "GB":
-        multiplier = 1024 ** 3
-    else:
-        raise Exception("Nothing valid entered.")
+    multiplier = DataUnit.from_string(choice_unit).value[1]
 
     data_size = input(f"Enter data size (in {choice_unit}): ")
 
     return int(data_size) * multiplier
 
 
+def get_sending_type():
+    sending_type = input(
+        "Do you wanna download a real file (enter file) or dummy data (enter dummy). In case of dummy data you can decide which size the data have.")
+    return SendingType.from_string(sending_type)
+
+
 def start_client():
-    buffer_size = get_buffer_size()
-    data_size = get_data_size()
+    sending_type = get_sending_type()
+    buffer_size = int(get_buffer_size())
+    data_size = 0
+    if sending_type == SendingType.DUMMY:
+        data_size = int(get_data_size())
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
 
-        buffer_and_data_size_data = s.recv(1024).decode()
-        buffer_size_data, data_size_data = buffer_and_data_size_data.split(";")
-        buffer_size = int(buffer_size_data)
-        data_size = int(data_size_data)
+        s.sendall(sending_type.value.encode())
 
-        print('Buffer size:', buffer_size)
-        print('Data size:', data_size)
+        if sending_type == SendingType.DUMMY:
+            ready_signal = s.recv(1)
 
-        s.sendall(b'ready')
+            if ready_signal == b'\x01':
+                s.sendall(f"{buffer_size};{data_size}".encode())
 
-        received_data_amount = 0
-        print(f"Received Data 0%")
-        start_time = time.time()
-        while received_data_amount < data_size:
-            chunk = s.recv(buffer_size)
-            if not chunk:
-                if received_data_amount == 0:
-                    start_time = time.time()
-                break
-            received_data_amount += buffer_size
-            percent = (received_data_amount / data_size) * 100
-            print(f"Received Data {percent:.2f}%")
-        end_time = time.time()
-        execution_time_seconds = end_time - start_time
-        execution_time_minutes = execution_time_seconds // 60
-        execution_time_seconds -= execution_time_minutes * 60
-        execution_time_hours = execution_time_minutes // 60
-        execution_time_minutes -= execution_time_hours * 60
-        execution_time_milliseconds = int((execution_time_seconds - int(execution_time_seconds)) * 1000)
-        execution_time_seconds = int(execution_time_seconds)
-        print(
-            f"Receiving ended. Execution time is {execution_time_hours} hours, {execution_time_minutes} minutes, {execution_time_seconds} seconds and {execution_time_milliseconds} milliseconds.")
+                print(f"Received Data 0%")
+                start_time = time.time()
 
-        """s.sendall(f"{buffer_size};{data_size}".encode())
+                numbers_of_iteration = data_size / buffer_size
+                for i in range(int(numbers_of_iteration)):
+                    s.recv(buffer_size)
+                    percent = ((i + 1) / numbers_of_iteration) * 100
+                    print(f"Received Data {percent:.2f}%")
 
-        response = s.recv(1024).decode()
+                difference = numbers_of_iteration - int(numbers_of_iteration)
+                if difference:
+                    s.recv(int(difference * buffer_size))
+                    print(f"Received Data 100%")
+                end_time = time.time()
 
-        if response == "ready":
-            print("Start sending data.")
-            dummy_data = b'A' * data_size
-            s.sendall(dummy_data)
-            s.close()
-        else:
-            print("Can not start sending data.")
-            s.close()"""
+                execution_time_seconds = end_time - start_time
+
+                execution_time_minutes = execution_time_seconds // 60
+                execution_time_seconds -= execution_time_minutes * 60
+                execution_time_milliseconds = int((execution_time_seconds - int(execution_time_seconds)) * 1000)
+                execution_time_seconds = int(execution_time_seconds)
+                print(
+                    f"Receiving ended. Execution time is {execution_time_minutes} minutes, {execution_time_seconds} seconds and {execution_time_milliseconds} milliseconds.")
+            else:
+                print("Can not start sending data.")
 
 
 if __name__ == '__main__':
