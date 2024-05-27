@@ -1,8 +1,22 @@
 import socket
 import time
+from enum import Enum
+
+
+class DataUnit(Enum):
+    GB = 1024 ** 3
+    MB = 1024 ** 2
+    KB = 1024
+    B = 1
+
 
 HOST = '127.0.0.1'
 PORT = 65432
+
+BUFFER_SIZE = 1024
+DATA_AMOUNT = 1
+DATA_UNIT = DataUnit.GB
+DATA_SIZE = DATA_AMOUNT * DATA_UNIT.value
 
 
 def start_server():
@@ -13,40 +27,16 @@ def start_server():
         conn, addr = s.accept()
         with conn:
             print('Connected with', addr)
+            conn.sendall(f"{BUFFER_SIZE};{DATA_SIZE}".encode())
 
-            buffer_and_data_size_data = conn.recv(1024).decode()
-            buffer_size_data, data_size_data = buffer_and_data_size_data.split(";")
+            response = conn.recv(1024).decode()
 
-            buffer_size = int(buffer_size_data)
-            data_size = int(data_size_data)
-
-            print('Buffer size:', buffer_size)
-            print('Data size:', data_size)
-
-            conn.sendall(b'ready')
-
-            received_data_amount = 0
-            print(f"Received Data 0%")
-            start_time = time.time()
-            while received_data_amount < data_size:
-                chunk = conn.recv(buffer_size)
-                if not chunk:
-                    if received_data_amount == 0:
-                        start_time = time.time()
-                    break
-                received_data_amount += buffer_size
-                percent = (received_data_amount / data_size) * 100
-                print(f"Received Data {percent:.2f}%")
-            end_time = time.time()
-            execution_time_seconds = end_time - start_time
-            execution_time_minutes = execution_time_seconds // 60
-            execution_time_seconds -= execution_time_minutes * 60
-            execution_time_hours = execution_time_minutes // 60
-            execution_time_minutes -= execution_time_hours * 60
-            execution_time_milliseconds = int((execution_time_seconds - int(execution_time_seconds)) * 1000)
-            execution_time_seconds = int(execution_time_seconds)
-            print(f"Receiving ended. Execution time is {execution_time_hours} hours, {execution_time_minutes} minutes, {execution_time_seconds} seconds and {execution_time_milliseconds} milliseconds.")
-            s.close()
+            if response == "ready":
+                print("Start sending data.")
+                dummy_data = b'A' * DATA_SIZE
+                conn.sendall(dummy_data)
+            else:
+                print("Can not start sending data.")
 
 
 if __name__ == '__main__':
