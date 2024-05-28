@@ -1,5 +1,6 @@
 import socket
 import time
+import os
 
 from enums import DataUnit, SendingType
 
@@ -32,6 +33,17 @@ def get_sending_type():
     return SendingType.from_string(sending_type)
 
 
+def get_file_path(filename=''):
+    path_input = input(
+        f'File {filename} will be received. Give path to directory or complete path to rename. Leave free to save at default. ')
+    if not path_input or len(filename) < 3:
+        path_input = filename
+    else:
+        if not path_input[-3:] == filename[-3:]:
+            path_input = os.path.join(path_input, filename)
+    return path_input
+
+
 def start_client():
     sending_type = get_sending_type()
     buffer_size = int(get_buffer_size())
@@ -48,27 +60,28 @@ def start_client():
         if ready_signal == b'\x01':
             execution_time_seconds = 0
             if sending_type == SendingType.DUMMY:
-                    s.sendall(f"{buffer_size};{data_size}".encode())
+                s.sendall(f"{buffer_size};{data_size}".encode())
 
-                    print(f"Received Data 0%")
-                    start_time = time.time()
+                print(f"Received Data 0%")
+                start_time = time.time()
 
-                    numbers_of_iteration = data_size / buffer_size
-                    for i in range(int(numbers_of_iteration)):
-                        s.recv(buffer_size)
-                        percent = ((i + 1) / numbers_of_iteration) * 100
-                        print(f"Received Data {percent:.2f}%")
+                numbers_of_iteration = data_size / buffer_size
+                for i in range(int(numbers_of_iteration)):
+                    s.recv(buffer_size)
+                    percent = ((i + 1) / numbers_of_iteration) * 100
+                    print(f"Received Data {percent:.2f}%")
 
-                    difference = numbers_of_iteration - int(numbers_of_iteration)
-                    if difference:
-                        s.recv(int(difference * buffer_size))
-                        print(f"Received Data 100%")
-                    end_time = time.time()
+                difference = numbers_of_iteration - int(numbers_of_iteration)
+                if difference:
+                    s.recv(int(difference * buffer_size))
+                    print(f"Received Data 100%")
+                end_time = time.time()
 
-                    execution_time_seconds = end_time - start_time
+                execution_time_seconds = end_time - start_time
             else:
                 s.sendall(str(buffer_size).encode())
                 filename, filesize_data = s.recv(BUFFER_SIZE).decode().split(";")
+                filename = get_file_path(filename)
                 filesize = int(filesize_data)
                 s.sendall(b'\x01')
 
@@ -101,7 +114,6 @@ def start_client():
 
         else:
             print("Can not start sending data. Server is not ready")
-
 
 
 if __name__ == '__main__':
