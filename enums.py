@@ -9,10 +9,13 @@ class DataUnit(Enum):
 
     @classmethod
     def from_string(cls, value: str):
+        first_member = None
         for member in cls:
             if member.value[0] == value.upper():
                 return member
-        raise ValueError(f"{value} is not a valid {cls.__name__}")
+            elif not first_member:
+                first_member = member
+        return first_member
 
 class SendingType(Enum):
     FILE = "file"
@@ -26,3 +29,18 @@ class SendingType(Enum):
                 return member
             last_member = member
         return last_member
+
+
+class CommunicationType(Enum):
+    DOWNLOAD = "download"
+    UPLOAD = "upload"
+
+    @classmethod
+    def from_string(cls, value: str):
+        first_member = None
+        for member in cls:
+            if member.value[0] == value.upper():
+                return member
+            elif not first_member:
+                first_member = member
+        return first_member
