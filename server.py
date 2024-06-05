@@ -17,27 +17,25 @@ def start_server():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
         while True:
-            try:
-                s.listen()
-                print('Server is waiting for connection...')
-                conn, addr = s.accept()
-                with conn:
-                    print('Connected with', addr)
-                    communication_type_data, sending_type_data = conn.recv(BUFFER_SIZE).decode().split(";")
-                    sending_type = SendingType.from_string(sending_type_data)
-                    communication_type = CommunicationType.from_string(communication_type_data)
-                    conn.sendall(b"\x01")
 
-                    if sending_type == SendingType.DUMMY:
-                        if communication_type == CommunicationType.DOWNLOAD:
-                            send_dummy_data(conn)
-                        else:
-                            receive_dummy_data(conn)
+            s.listen()
+            print('Server is waiting for connection...')
+            conn, addr = s.accept()
+            with conn:
+                print('Connected with', addr)
+                communication_type_data, sending_type_data = conn.recv(BUFFER_SIZE).decode().split(";")
+                sending_type = SendingType.from_string(sending_type_data)
+                communication_type = CommunicationType.from_string(communication_type_data)
+                conn.sendall(b"\x01")
+
+                if sending_type == SendingType.DUMMY:
+                    if communication_type == CommunicationType.DOWNLOAD:
+                        send_dummy_data(conn)
                     else:
-                        send_file(conn)
-            except Exception as e:
-                print(e)
-                continue
+                        receive_dummy_data(conn)
+                else:
+                    send_file(conn)
+
 
 
 def send_file(conn):
@@ -74,12 +72,8 @@ def receive_dummy_data(conn):
     conn.sendall(b"\x01")
 
     received_data = "data"
-
     while received_data:
         received_data = conn.recv(buffer_size)
-
-    print("fertig")
-
 
 if __name__ == '__main__':
     start_server()

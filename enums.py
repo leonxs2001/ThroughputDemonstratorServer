@@ -17,6 +17,7 @@ class DataUnit(Enum):
                 first_member = member
         return first_member
 
+
 class SendingType(Enum):
     FILE = "file"
     DUMMY = "dummy"
@@ -39,7 +40,7 @@ class CommunicationType(Enum):
     def from_string(cls, value: str):
         first_member = None
         for member in cls:
-            if member.value[0] == value.upper():
+            if member.value == value.lower():
                 return member
             elif not first_member:
                 first_member = member
