@@ -35,7 +35,10 @@ def start_server():
                         else:
                             receive_dummy_data(conn)
                     else:
-                        send_file(conn)
+                        if communication_type == CommunicationType.DOWNLOAD:
+                            send_file(conn)
+                        else:
+                            receive_file(conn)
                 except Exception as e:
                     print(e)
 
@@ -70,6 +73,36 @@ def send_dummy_data(conn):
 
 def receive_dummy_data(conn):
     buffer_size = int(conn.recv(BUFFER_SIZE).decode())
+
+    conn.sendall(b"\x01")
+
+    received_data = "data"
+    while received_data:
+        received_data = conn.recv(buffer_size)
+
+
+def receive_file(conn):
+    buffer_size = int(conn.recv(BUFFER_SIZE).decode())
+
+    received_data = conn.recv(BUFFER_SIZE).decode()
+    filename_bytes = received_data.split(";")
+    filename = filename_bytes[0]
+    received_data = filename_bytes[1].encode()
+
+    # Bereit-Signal zum Client senden
+    conn.sendall(b"\x01")
+
+    # Dateiinhalt empfangen und speichern
+    with open(filename, 'wb') as file:
+        file.write(received_data)
+        received_data = conn.recv(BUFFER_SIZE)
+        while received_data:
+            file.write(received_data)
+            received_data = conn.recv(BUFFER_SIZE)
+
+    print(f"Datei '{filename}' erfolgreich empfangen und gespeichert.")
+
+
 
     conn.sendall(b"\x01")
 
