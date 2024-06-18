@@ -36,7 +36,7 @@ def start_server():
                             receive_dummy_data(conn)
                     else:
                         send_file(conn)
-                except ConnectionResetError as e:
+                except Exception as e:
                     print(e)
 
 
