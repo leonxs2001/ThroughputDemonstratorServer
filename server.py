@@ -28,14 +28,16 @@ def start_server():
                 communication_type = CommunicationType.from_string(communication_type_data)
                 conn.sendall(b"\x01")
 
-                if sending_type == SendingType.DUMMY:
-                    if communication_type == CommunicationType.DOWNLOAD:
-                        send_dummy_data(conn)
+                try:
+                    if sending_type == SendingType.DUMMY:
+                        if communication_type == CommunicationType.DOWNLOAD:
+                            send_dummy_data(conn)
+                        else:
+                            receive_dummy_data(conn)
                     else:
-                        receive_dummy_data(conn)
-                else:
-                    send_file(conn)
-
+                        send_file(conn)
+                except ConnectionResetError as e:
+                    print(e)
 
 
 def send_file(conn):
@@ -74,6 +76,7 @@ def receive_dummy_data(conn):
     received_data = "data"
     while received_data:
         received_data = conn.recv(buffer_size)
+
 
 if __name__ == '__main__':
     start_server()
