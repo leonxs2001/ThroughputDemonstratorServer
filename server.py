@@ -2,7 +2,7 @@ import os
 import socket
 from enums import DataUnit, SendingType, CommunicationType
 
-HOST = "192.168.137.1"  # "192.168.137.7"  # '127.0.0.1' #192.168.137.7
+HOST = '192.168.178.41'  # "192.168.137.1"  # "192.168.137.7"  # '127.0.0.1'
 PORT = 65432
 
 BUFFER_SIZE = 1024
@@ -11,9 +11,12 @@ DATA_UNIT = DataUnit.GB
 DATA_SIZE = DATA_AMOUNT * DATA_UNIT.value
 SEND_DUMMY_BYTE = b"A"
 DOWNLOADABLE_FILE = r"C:\Users\fbi-user\Documents\MODSYS\Masterarbeit.pdf"
+DIRECTORY_PATH = "files"
 
 
 def start_server():
+    if not os.path.exists(DIRECTORY_PATH):
+        os.makedirs(DIRECTORY_PATH)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((HOST, PORT))
         while True:
@@ -82,33 +85,30 @@ def receive_dummy_data(conn):
 
 
 def receive_file(conn):
-    buffer_size = int(conn.recv(BUFFER_SIZE).decode())
+    buffer_size_data, filename = conn.recv(BUFFER_SIZE).decode().split(";")
+    buffer_size = int(buffer_size_data)
 
-    received_data = conn.recv(BUFFER_SIZE).decode()
-    filename_bytes = received_data.split(";")
-    filename = filename_bytes[0]
-    received_data = filename_bytes[1].encode()
+    filepath = os.path.join(DIRECTORY_PATH, filename)
 
-    # Bereit-Signal zum Client senden
+    os.path.exists(filepath)
+
+    name, extension = os.path.splitext(filename)
+    i = 1
+    while True:
+        new_filename = f"{name}_{i}{extension}"
+        new_filepath = os.path.join(DIRECTORY_PATH, new_filename)
+        if not os.path.exists(new_filepath):
+            filepath = new_filepath
+            break
+        i += 1
+
     conn.sendall(b"\x01")
 
-    # Dateiinhalt empfangen und speichern
-    with open(filename, 'wb') as file:
-        file.write(received_data)
-        received_data = conn.recv(BUFFER_SIZE)
+    with open(filepath, 'wb') as file:
+        received_data = conn.recv(buffer_size)
         while received_data:
             file.write(received_data)
-            received_data = conn.recv(BUFFER_SIZE)
-
-    print(f"Datei '{filename}' erfolgreich empfangen und gespeichert.")
-
-
-
-    conn.sendall(b"\x01")
-
-    received_data = "data"
-    while received_data:
-        received_data = conn.recv(buffer_size)
+            received_data = conn.recv(buffer_size)
 
 
 if __name__ == '__main__':
