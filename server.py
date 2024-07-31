@@ -2,15 +2,15 @@ import os
 import socket
 from enums import DataUnit, SendingType, CommunicationType
 
-HOST = '192.168.178.41'  # "192.168.137.1"  # "192.168.137.7"  # '127.0.0.1'
-PORT = 65432
+HOST = 0.0.0.0 # Set host here
+PORT = 65432 # Set port here
 
 BUFFER_SIZE = 1024
 DATA_AMOUNT = 1
 DATA_UNIT = DataUnit.GB
 DATA_SIZE = DATA_AMOUNT * DATA_UNIT.value
 SEND_DUMMY_BYTE = b"A"
-DOWNLOADABLE_FILE = r"C:\Users\fbi-user\Documents\MODSYS\Masterarbeit.pdf"
+DOWNLOADABLE_FILE = r"C:\Users\user\myfile.file" # Set file here
 DIRECTORY_PATH = "files"
 
 
